@@ -221,7 +221,8 @@ class AsyncChatbot:
     async def __get_snlm0e(self):
         # Find "SNlM0e":"<ID>"
         if (
-            not (self.secure_1psid and self.secure_1psidts)
+            not self.secure_1psid
+            or not self.secure_1psidts
             or self.secure_1psid[-1] != "."
         ):
             raise Exception(
@@ -236,12 +237,12 @@ class AsyncChatbot:
             raise Exception(
                 f"Response code not 200. Response Status is {resp.status_code}",
             )
-        SNlM0e = re.search(r"SNlM0e\":\"(.*?)\"", resp.text)
-        if not SNlM0e:
+        if SNlM0e := re.search(r"SNlM0e\":\"(.*?)\"", resp.text):
+            return SNlM0e[1]
+        else:
             raise Exception(
                 "SNlM0e value not found in response. Check __Secure_1PSID value.",
             )
-        return SNlM0e.group(1)
 
     async def ask(self, message: str) -> dict:
         """
@@ -280,8 +281,7 @@ class AsyncChatbot:
         if len(json_chat_data) >= 3:
             if len(json_chat_data[4][0]) >= 4:
                 if json_chat_data[4][0][4]:
-                    for img in json_chat_data[4][0][4]:
-                        images.append(img[0][0][0])
+                    images.extend(img[0][0][0] for img in json_chat_data[4][0][4])
         results = {
             "content": json_chat_data[4][0][1][0],
             "conversation_id": json_chat_data[1][0],
